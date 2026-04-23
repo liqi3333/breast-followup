@@ -1,0 +1,32 @@
+name: Build Breast Followup HTML
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build-html:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build standalone HTML package
+        run: npm run build:html
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Breast-Followup-System-html
+          path: dist-html/*.html

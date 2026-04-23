@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title>乳腺癌随访系统 · 功能完善版</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js">
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+        body {
+            background: #f5f9fc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #app {
+            width: 100%;
+            max-width: 1500px;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 18px 40px rgba(0, 20, 40, 0.08);
+            overflow: hidden;
+        }
+        :root {
+            --primary: #b3446c;
+            --primary-light: #fdf3f7;
+            --border: #e2ccd5;
+            --bg-card: #fefcfd;
+            --disabled-bg: #e9e9e9;
+        }
+        .hidden { display: none !important; }
+        .flex { display: flex; align-items: center; gap: 12px; }
+        .btn {
+            border: none;
+            padding: 8px 18px;
+            border-radius: 24px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 8px rgba(179, 68, 108, 0.2);
+        }
+        .btn-outline {
+            background: white;
+            border: 1.5px solid #c79ab3;
+            color: #4e2d44;
+        }
+        .btn-sm { padding: 5px 14px; font-size: 0.85rem; }
+        .btn-icon { background: none; border: none; cursor: pointer; font-size: 1rem; margin: 0 4px; }
+        .edit-btn { color: #2c7a7b; }
+        .delete-btn { color: #c94b4b; }
+        .auth-container { display: flex; align-items: center; justify-content: center; min-height: 500px; background: #fdf5fb; }
+        .auth-card { background: white; padding: 32px 28px; border-radius: 24px; box-shadow: 0 10px 24px rgba(156,39,176,0.08); width: 400px; border: 1px solid var(--border); }
+        .auth-card h2 { color: #3d2b3f; margin-bottom: 20px; font-weight: 500; text-align: center; }
+        .input-group { margin-bottom: 16px; }
+        .input-group label { font-weight: 500; color: #4a2e44; display: block; margin-bottom: 4px; font-size: 0.9rem; }
+        .input-group input { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 20px; background: var(--bg-card); }
+        .link { color: var(--primary); cursor: pointer; text-decoration: underline; }
+        .navbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; background: #fef9fc; border-bottom: 2px solid #efdae8; }
+        .navbar .logo { font-size: 1.5rem; font-weight: 400; color: #2e1d29; display: flex; align-items: center; gap: 10px; }
+        .badge { background: #f1e1ec; padding: 6px 18px; border-radius: 30px; font-size: 0.9rem; }
+        .tabs { display: flex; gap: 4px; margin: 0 28px; border-bottom: 2px solid #efdae8; }
+        .tab { padding: 10px 22px; cursor: pointer; font-weight: 500; color: #6b4b60; border-bottom: 3px solid transparent; }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .form-wrapper { padding: 18px 28px 8px; max-height: 65vh; overflow-y: auto; }
+        .section-title { font-size: 1.15rem; font-weight: 600; color: #402736; margin: 16px 0 12px; border-left: 5px solid #d65b9c; padding-left: 16px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px 18px; }
+        .field { display: flex; flex-direction: column; }
+        .field label { font-weight: 500; color: #50364a; font-size: 0.9rem; margin-bottom: 4px; }
+        .field input, .field select, .field textarea {
+            padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 18px; background: #fefafd; font-size: 0.9rem;
+        }
+        .field input:disabled, .field select:disabled, .field textarea:disabled {
+            background: var(--disabled-bg); color: #666; cursor: not-allowed; border-color: #ddd;
+        }
+        .field textarea { min-height: 60px; resize: vertical; }
+        .combo { display: flex; gap: 4px; align-items: center; }
+        .combo select { flex: 2; }
+        .combo input { flex: 1; }
+        .readonly { background: #f2e5ef; border: 1px solid #dbbcd2; padding: 8px 12px; border-radius: 18px; font-weight: 500; }
+        .stage-display { background: linear-gradient(105deg, #fce9f0 0%, #f5dae7 100%); border-radius: 24px; padding: 20px 24px; margin: 16px 0; border: 1px solid #e2bfcf; }
+        .table-container { overflow-x: auto; border-radius: 18px; border: 1px solid var(--border); background: #fdf8fb; margin-top: 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 1200px; }
+        th { background: #f2e1ed; padding: 12px 6px; text-align: left; font-weight: 600; color: #34202e; }
+        td { padding: 8px 6px; border-bottom: 1px solid #e7d2e2; }
+        .action-bar { display: flex; flex-wrap: wrap; gap: 12px; margin: 18px 0 10px; }
+        .text-sm { font-size: 0.85rem; color: #6d4e62; }
+        .edit-indicator { background: #fff3cd; padding: 6px 16px; border-radius: 20px; display: inline-block; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <!-- 登录注册界面 -->
+    <div id="authPage" class="auth-container">
+        <div class="auth-card" id="loginCard">
+            <h2><i class="fas fa-ribbon" style="color:var(--primary);"></i> 乳腺随访系统</h2>
+            <div class="input-group"><label>用户名</label><input type="text" id="loginUsername" placeholder="用户名"></div>
+            <div class="input-group"><label>密码</label><input type="password" id="loginPassword" placeholder="密码"></div>
+            <button class="btn btn-primary" style="width:100%;" id="loginBtn">登 录</button>
+            <div class="text-sm" style="text-align:center;margin-top:12px;">没有账号？ <span class="link" id="toRegisterLink">立即注册</span></div>
+            <div class="text-sm" style="text-align:center;">管理员: admin / admin123</div>
+        </div>
+        <div class="auth-card hidden" id="registerCard">
+            <h2>注册新账号</h2>
+            <div class="input-group"><label>用户名</label><input type="text" id="regUsername"></div>
+            <div class="input-group"><label>密码</label><input type="password" id="regPassword"></div>
+            <button class="btn btn-primary" style="width:100%;" id="registerBtn">注 册</button>
+            <div class="text-sm" style="text-align:center;margin-top:12px;"><span class="link" id="toLoginLink">返回登录</span></div>
+        </div>
+    </div>
+
+    <!-- 主系统界面 -->
+    <div id="mainPage" class="hidden">
+        <div class="navbar">
+            <div class="logo"><i class="fas fa-female" style="color:var(--primary);"></i> 乳腺癌随访 · 完善版</div>
+            <div class="flex">
+                <span class="badge" id="displayRole"></span>
+                <span class="badge" id="displayUsername"></span>
+                <button class="btn btn-outline btn-sm" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> 登出</button>
+            </div>
+        </div>
+        <div class="tabs" id="mainTabs">
+            <div class="tab active" data-tab="followupTab"><i class="fas fa-clipboard-list"></i> 随访记录</div>
+            <div class="tab" data-tab="adminTab" id="adminTabBtn" style="display:none;"><i class="fas fa-users-cog"></i> 用户管理</div>
+        </div>
+
+        <!-- 随访表单 -->
+        <div class="tab-content active" id="followupTab">
+            <div class="form-wrapper">
+                <div id="editIndicator" class="text-sm hidden" style="margin-bottom:6px;">
+                    <span class="edit-indicator"><i class="fas fa-edit"></i> 正在编辑记录 <span id="editingRecordName"></span></span>
+                    <button class="btn btn-outline btn-sm" id="cancelEditBtn">取消编辑</button>
+                </div>
+                <form id="followupForm">
+                    <div class="section-title"><i class="fas fa-id-card"></i> 基本信息</div>
+                    <div class="grid-2">
+                        <div class="field"><label>姓名 *</label><input type="text" id="patientName" placeholder="必填"></div>
+                        <div class="field"><label>性别</label><select id="gender"><option value="女" selected>女</option><option value="男">男</option></select></div>
+                        <div class="field"><label>年龄</label><input type="number" id="age" placeholder="留空" value=""></div>
+                        <div class="field"><label>发病时长</label><select id="diseaseDuration"><option value="<6个月">＜6个月</option><option value="6-12个月" selected>6-12个月</option><option value="1-2年">1-2年</option><option value="2-5年">2-5年</option><option value=">5年">＞5年</option></select></div>
+                        <div class="field"><label>确诊日期</label><input type="date" id="diagnosisDate"></div>
+                        <div class="field"><label>发病部位</label><select id="laterality"><option value="左侧">左侧</option><option value="右侧">右侧</option><option value="双侧" selected>双侧</option></select></div>
+                        <div class="field"><label>月经状态</label><select id="menopauseStatus"><option value="绝经前">绝经前</option><option value="围绝经期">围绝经期</option><option value="绝经后" selected>绝经后</option></select></div>
+                        <div class="field"><label>家族史</label><select id="familyHistory"><option value="无" selected>无</option><option value="一级亲属">一级亲属</option><option value="二级亲属">二级亲属</option></select></div>
+                    </div>
+
+                    <div class="section-title"><i class="fas fa-microscope"></i> 肿瘤特征 & 病理 (AJCC 8th)</div>
+                    <div class="grid-2">
+                        <div class="field"><label>病理类型</label><div class="combo"><select id="pathologyType" onchange="toggleOther(this,'pathologyOther')"><option value="浸润性导管癌">浸润性导管癌</option><option value="浸润性小叶癌">浸润性小叶癌</option><option value="导管原位癌">导管原位癌</option><option value="小叶原位癌">小叶原位癌</option><option value="粘液癌">粘液癌</option><option value="髓样癌">髓样癌</option><option value="小管癌">小管癌</option><option value="乳头状癌">乳头状癌</option><option value="化生性癌">化生性癌</option><option value="其他">其他</option></select><input type="text" id="pathologyOther" placeholder="其他" style="display:none;"></div></div>
+                        <div class="field"><label>组织学分级</label><select id="grade"><option value="G1">G1 (低级别)</option><option value="G2" selected>G2 (中级别)</option><option value="G3">G3 (高级别)</option></select></div>
+                        <div class="field"><label>ER</label><select id="erStatus"><option value="阳性" selected>阳性</option><option value="阴性">阴性</option></select></div>
+                        <div class="field"><label>PR</label><select id="prStatus"><option value="阳性" selected>阳性</option><option value="阴性">阴性</option></select></div>
+                        <div class="field"><label>HER2</label><select id="her2Status"><option value="阴性">阴性</option><option value="阳性" selected>阳性</option><option value="不确定">不确定</option></select></div>
+                        <div class="field"><label>Ki-67</label><select id="ki67"><option value="<14%">＜14% (低)</option><option value="14-30%" selected>14-30%</option><option value=">30%">＞30% (高)</option></select></div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="field"><label>T 分期</label><select id="tStage"><option value="Tis">Tis (DCIS)</option><option value="T1mi">T1mi (≤1mm)</option><option value="T1a">T1a (1-5mm)</option><option value="T1b">T1b (5-10mm)</option><option value="T1c" selected>T1c (10-20mm)</option><option value="T2">T2 (20-50mm)</option><option value="T3">T3 (>50mm)</option><option value="T4a">T4a (胸壁)</option><option value="T4b">T4b (皮肤)</option><option value="T4c">T4c (T4a+b)</option><option value="T4d">T4d (炎性)</option></select></div>
+                        <div class="field"><label>N 分期</label><select id="nStage"><option value="N0" selected>N0</option><option value="N1">N1 (可活动)</option><option value="N2a">N2a (固定/融合)</option><option value="N2b">N2b (仅内乳)</option><option value="N3a">N3a (锁骨下)</option><option value="N3b">N3b (内乳+腋窝)</option><option value="N3c">N3c (锁骨上)</option></select></div>
+                        <div class="field"><label>M 分期</label><select id="mStage"><option value="M0" selected>M0</option><option value="M1">M1</option></select></div>
+                        <div class="field"><button type="button" class="btn btn-outline btn-sm" id="calcStageBtn"><i class="fas fa-calculator"></i> 计算分期</button></div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="field"><label>Luminal 分型</label><input type="text" id="luminalType" readonly class="readonly"></div>
+                        <div class="field"><label>AJCC 预后分期</label><input type="text" id="ajccStage" readonly class="readonly"></div>
+                    </div>
+                    <div class="stage-display">
+                        <span style="font-weight:600;">解剖分期:</span> <span id="anatStageText">-</span> &nbsp;&nbsp;
+                        <span style="font-weight:600;">预后分期:</span> <span id="prognStageText">-</span>
+                        <div id="stageNote" class="text-sm"></div>
+                    </div>
+
+                    <div class="section-title"><i class="fas fa-syringe"></i> 治疗情况</div>
+                    <div class="grid-2">
+                        <div class="field"><label>手术方式</label><div class="combo"><select id="surgeryType" onchange="toggleOther(this,'surgeryOther')"><option value="保乳手术">保乳手术</option><option value="全乳切除术">全乳切除术</option><option value="改良根治术">改良根治术</option><option value="前哨淋巴结活检">前哨淋巴结活检</option><option value="腋窝淋巴结清扫">腋窝淋巴结清扫</option><option value="未手术">未手术</option><option value="其他">其他</option></select><input type="text" id="surgeryOther" placeholder="其他" style="display:none;"></div></div>
+                        <div class="field"><label>放疗</label><select id="radiotherapy"><option value="是">是</option><option value="否" selected>否</option></select></div>
+                        <div class="field"><label>化疗</label><select id="chemotherapy"><option value="是">是</option><option value="否">否</option></select></div>
+                        <div class="field"><label>化疗方案</label><div class="combo"><select id="chemoRegimen" onchange="toggleOther(this,'chemoOther')"><option value="AC-T">AC-T</option><option value="TC">TC</option><option value="TCHP">TCHP</option><option value="ddAC-T">ddAC-T</option><option value="CMF">CMF</option><option value="其他">其他</option></select><input type="text" id="chemoOther" placeholder="其他" style="display:none;"></div></div>
+                        <div class="field"><label>内分泌治疗</label><select id="endocrineTherapy"><option value="是">是</option><option value="否">否</option></select></div>
+                        <div class="field"><label>内分泌药物</label><div class="combo"><select id="endocrineDrug" onchange="toggleOther(this,'endocrineOther')"><option value="他莫昔芬">他莫昔芬</option><option value="来曲唑">来曲唑</option><option value="阿那曲唑">阿那曲唑</option><option value="依西美坦">依西美坦</option><option value="戈舍瑞林">戈舍瑞林</option><option value="氟维司群">氟维司群</option><option value="其他">其他</option></select><input type="text" id="endocrineOther" placeholder="其他" style="display:none;"></div></div>
+                        <div class="field"><label>靶向治疗</label><select id="targetedTherapy"><option value="是">是</option><option value="否" selected>否</option></select></div>
+                        <div class="field"><label>靶向药物</label><div class="combo"><select id="targetedDrug" onchange="toggleOther(this,'targetedOther')"><option value="无">无</option><option value="曲妥珠单抗">曲妥珠单抗</option><option value="帕妥珠单抗">帕妥珠单抗</option><option value="T-DM1">T-DM1</option><option value="拉帕替尼">拉帕替尼</option><option value="其他">其他</option></select><input type="text" id="targetedOther" placeholder="其他" style="display:none;"></div></div>
+                    </div>
+
+                    <div class="section-title"><i class="fas fa-stethoscope"></i> 随访评估</div>
+                    <div class="grid-2">
+                        <div class="field"><label>随访日期</label><input type="date" id="followupDate"></div>
+                        <div class="field"><label>ECOG PS</label><select id="ecog"><option value="0">0 - 活动正常</option><option value="1" selected>1 - 轻度症状</option><option value="2">2 - 卧床＜50%</option><option value="3">3 - 卧床＞50%</option><option value="4">4 - 卧床不起</option></select></div>
+                        <div class="field"><label>复发/转移</label><select id="recurrenceSign" onchange="handleRecurrence()"><option value="无" selected>无</option><option value="局部复发">局部复发</option><option value="远处转移">远处转移</option></select></div>
+                        <div class="field"><label>转移部位</label><select id="metastasisSite" disabled><option value="无" selected>无</option><option value="骨">骨</option><option value="肺">肺</option><option value="肝">肝</option><option value="脑">脑</option><option value="其他">其他</option></select></div>
+                        <div class="field" style="grid-column: span 2;"><label>备注</label><textarea id="notes" rows="2"></textarea></div>
+                    </div>
+                    <div class="action-bar">
+                        <button type="button" class="btn btn-primary" id="saveRecordBtn"><i class="fas fa-save"></i> 保存记录</button>
+                        <button type="button" class="btn btn-outline" id="resetFormBtn"><i class="fas fa-undo-alt"></i> 重置</button>
+                    </div>
+                </form>
+            </div>
+            <div style="padding:8px 28px 18px;">
+                <div class="flex" style="justify-content:flex-end; margin-bottom:10px;">
+                    <button class="btn btn-outline btn-sm" id="exportJsonBtn"><i class="fas fa-file-code"></i> 导出 JSON</button>
+                    <button class="btn btn-outline btn-sm" id="exportExcelBtn"><i class="fas fa-file-excel"></i> 导出 Excel</button>
+                    <button class="btn btn-outline btn-sm" id="exportUsersBtn"><i class="fas fa-users"></i> 导出用户数据</button>
+                    <input type="file" id="importFileInput" accept=".json" style="display:none;">
+                    <button class="btn btn-outline btn-sm" id="importBtn"><i class="fas fa-upload"></i> 导入 JSON</button>
+                </div>
+                <div class="table-container">
+                    <table id="recordTable">
+                        <thead><tr><th>姓名</th><th>性别</th><th>年龄</th><th>部位</th><th>病理</th><th>ER/PR/HER2</th><th>TNM</th><th>分型/分期</th><th>手术</th><th>化疗</th><th>内分泌</th><th>靶向</th><th>随访日</th><th>ECOG</th><th>复发</th><th>操作</th></tr></thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 用户管理 -->
+        <div class="tab-content" id="adminTab" style="padding:18px 28px;">
+            <h3><i class="fas fa-users"></i> 注册用户管理</h3>
+            <div class="table-container" style="margin-top:12px;">
+                <table id="userTable"><thead><tr><th>用户名</th><th>角色</th><th>操作</th></tr></thead><tbody id="userTableBody"></tbody></table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const USERS_KEY = 'breast_users_db';
+        const RECORDS_KEY = 'breast_followup_records';
+
+        let currentUser = null;
+        let users = [];
+        let records = [];
+        let editingId = null;
+
+        // DOM元素
+        const authPage = document.getElementById('authPage');
+        const mainPage = document.getElementById('mainPage');
+        const loginCard = document.getElementById('loginCard');
+        const registerCard = document.getElementById('registerCard');
+        const loginUsername = document.getElementById('loginUsername');
+        const loginPassword = document.getElementById('loginPassword');
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        const regUsername = document.getElementById('regUsername');
+        const regPassword = document.getElementById('regPassword');
+        const toRegisterLink = document.getElementById('toRegisterLink');
+        const toLoginLink = document.getElementById('toLoginLink');
+        const displayUsername = document.getElementById('displayUsername');
+        const displayRole = document.getElementById('displayRole');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const adminTabBtn = document.getElementById('adminTabBtn');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        const patientName = document.getElementById('patientName');
+        const age = document.getElementById('age');
+        const diagnosisDate = document.getElementById('diagnosisDate');
+        const followupDate = document.getElementById('followupDate');
+        const recurrenceSign = document.getElementById('recurrenceSign');
+        const metastasisSite = document.getElementById('metastasisSite');
+        const luminalType = document.getElementById('luminalType');
+        const ajccStage = document.getElementById('ajccStage');
+        const tableBody = document.getElementById('tableBody');
+        const userTableBody = document.getElementById('userTableBody');
+        const editIndicator = document.getElementById('editIndicator');
+        const editingRecordName = document.getElementById('editingRecordName');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const anatStageText = document.getElementById('anatStageText');
+        const prognStageText = document.getElementById('prognStageText');
+        const stageNote = document.getElementById('stageNote');
+
+        // ---------- 工具函数 ----------
+        function loadData() {
+            users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+            if (!users.length) {
+                users = [{ username: 'admin', password: 'admin123', role: 'admin' }];
+                saveUsers();
+            }
+            records = JSON.parse(localStorage.getItem(RECORDS_KEY) || '[]');
+        }
+        function saveUsers() { localStorage.setItem(USERS_KEY, JSON.stringify(users)); }
+        function saveRecords() { localStorage.setItem(RECORDS_KEY, JSON.stringify(records)); }
+        function today() { return new Date().toISOString().slice(0, 10); }
+
+        window.toggleOther = function(sel, inputId) {
+            const inp = document.getElementById(inputId);
+            if (sel.disabled) { inp.style.display = 'none'; return; }
+            if (sel.value === '其他') { inp.style.display = 'block'; inp.focus(); }
+            else { inp.style.display = 'none'; inp.value = ''; }
+        };
+        window.handleRecurrence = function() {
+            if (recurrenceSign.value === '无') { metastasisSite.value = '无'; metastasisSite.disabled = true; }
+            else { metastasisSite.disabled = false; }
+        };
+
+        // 治疗字段实时禁用联动
+        function updateTreatmentDisabled() {
+            const chemoYes = document.getElementById('chemotherapy').value === '是';
+            const endoYes = document.getElementById('endocrineTherapy').value === '是';
+            const targetYes = document.getElementById('targetedTherapy').value === '是';
+
+            const chemoReg = document.getElementById('chemoRegimen');
+            const chemoOther = document.getElementById('chemoOther');
+            chemoReg.disabled = !chemoYes;
+            chemoOther.disabled = !chemoYes;
+            if (!chemoYes) { chemoOther.style.display = 'none'; chemoOther.value = ''; }
+
+            const endoDrug = document.getElementById('endocrineDrug');
+            const endoOther = document.getElementById('endocrineOther');
+            endoDrug.disabled = !endoYes;
+            endoOther.disabled = !endoYes;
+            if (!endoYes) { endoOther.style.display = 'none'; endoOther.value = ''; }
+
+            const targetDrug = document.getElementById('targetedDrug');
+            const targetOther = document.getElementById('targetedOther');
+            targetDrug.disabled = !targetYes;
+            targetOther.disabled = !targetYes;
+            if (!targetYes) { targetOther.style.display = 'none'; targetOther.value = ''; }
+        }
+
+        // 为三个主开关绑定实时事件
+        document.getElementById('chemotherapy').addEventListener('change', updateTreatmentDisabled);
+        document.getElementById('endocrineTherapy').addEventListener('change', updateTreatmentDisabled);
+        document.getElementById('targetedTherapy').addEventListener('change', updateTreatmentDisabled);
+
+        // ---------- 分期计算 ----------
+        function computeStage() {
+            const subtype = getLuminalSubtype();
+            luminalType.value = subtype.name;
+            const t = document.getElementById('tStage').value;
+            const n = document.getElementById('nStage').value;
+            const m = document.getElementById('mStage').value;
+            const grade = document.getElementById('grade').value;
+            let anatStage = '', anatDesc = '';
+            if (m === 'M1') { anatStage = 'Ⅳ期'; anatDesc = '远处转移'; }
+            else if (t === 'Tis' && n === 'N0') { anatStage = '0期'; anatDesc = '原位癌'; }
+            else if (t.includes('T4d') && m === 'M0') { anatStage = 'ⅢB期'; anatDesc = '炎性乳腺癌'; }
+            else {
+                const tMain = t.startsWith('T1') ? 'T1' : (t.startsWith('T2') ? 'T2' : (t.startsWith('T3') ? 'T3' : (t.startsWith('T4') ? 'T4' : t)));
+                const nIsN0 = (n === 'N0');
+                const nIsN1 = (n === 'N1');
+                const nIsN2 = (n.startsWith('N2'));
+                const nIsN3 = (n.startsWith('N3'));
+                if ((tMain === 'T1' || t === 'T1mi') && nIsN0) { anatStage = 'ⅠA期'; anatDesc = 'T1 N0 M0'; }
+                else if ((tMain === 'T1' || t === 'T1mi') && nIsN1) { anatStage = 'ⅡA期'; anatDesc = 'T1 N1'; }
+                else if (tMain === 'T2' && nIsN0) { anatStage = 'ⅡA期'; anatDesc = 'T2 N0'; }
+                else if (tMain === 'T2' && nIsN1) { anatStage = 'ⅡB期'; anatDesc = 'T2 N1'; }
+                else if (tMain === 'T3' && nIsN0) { anatStage = 'ⅡB期'; anatDesc = 'T3 N0'; }
+                else if ((tMain === 'T1' || tMain === 'T2') && nIsN2) { anatStage = 'ⅢA期'; anatDesc = 'T1-2 N2'; }
+                else if (tMain === 'T3' && (nIsN1 || nIsN2)) { anatStage = 'ⅢA期'; anatDesc = 'T3 N1/N2'; }
+                else if (tMain === 'T4' && (nIsN0 || nIsN1 || nIsN2) && !t.includes('T4d')) { anatStage = 'ⅢB期'; anatDesc = 'T4 N0-2'; }
+                else if (nIsN3) { anatStage = 'ⅢC期'; anatDesc = '任何T N3'; }
+                else { anatStage = '待核实'; anatDesc = ''; }
+            }
+            let prognStage = anatStage;
+            if (subtype.key === 'LumA' && (grade === 'G1' || grade === 'G2')) {
+                if (anatStage === 'ⅠA期') prognStage = 'ⅠA期';
+                else if (anatStage === 'ⅡA期') prognStage = 'ⅠB期';
+                else if (anatStage === 'ⅡB期') prognStage = 'ⅡA期';
+                else if (anatStage === 'ⅢA期') prognStage = 'ⅡB期';
+            } else if ((subtype.key === 'TNBC' || subtype.key === 'HER2pos' || subtype.key === 'LumB_HER2pos') && (anatStage === 'ⅠA期' || anatStage === 'ⅠB期' || anatStage === 'ⅡA期')) {
+                if (anatStage === 'ⅠA期') prognStage = 'ⅡA期';
+                else if (anatStage === 'ⅡA期') prognStage = 'ⅡB期';
+            } else if (grade === 'G3' && anatStage === 'ⅠA期' && subtype.key !== 'LumA') prognStage = 'ⅡA期';
+            ajccStage.value = prognStage;
+            anatStageText.textContent = anatStage + (anatDesc ? ' (' + anatDesc + ')' : '');
+            prognStageText.textContent = prognStage;
+            stageNote.textContent = '分子分型: ' + subtype.name + ' | 分级: ' + grade;
+        }
+
+        function getLuminalSubtype() {
+            const er = document.getElementById('erStatus').value;
+            const pr = document.getElementById('prStatus').value;
+            const her2 = document.getElementById('her2Status').value;
+            const ki = document.getElementById('ki67').value;
+            if ((er === '阳性' || pr === '阳性')) {
+                if (her2 === '阴性') return ki === '<14%' ? {key:'LumA', name:'Luminal A'} : {key:'LumB_HER2neg', name:'Luminal B (HER2-)'};
+                else if (her2 === '阳性') return {key:'LumB_HER2pos', name:'Luminal B (HER2+)'};
+            } else {
+                if (her2 === '阳性') return {key:'HER2pos', name:'HER2过表达型'};
+                else return {key:'TNBC', name:'三阴性乳腺癌'};
+            }
+            return {key:'Unknown', name:'未知'};
+        }
+
+        function suggestTreatmentsOnCalc() {
+            const subtype = getLuminalSubtype();
+            const mStage = document.getElementById('mStage').value;
+            const stageIsIV = (mStage === 'M1');
+            const chemo = document.getElementById('chemotherapy');
+            const endo = document.getElementById('endocrineTherapy');
+            const target = document.getElementById('targetedTherapy');
+            if (subtype.key === 'LumA' && !stageIsIV) { chemo.value = '否'; endo.value = '是'; target.value = '否'; }
+            else if (subtype.key === 'LumB_HER2neg') { chemo.value = '是'; endo.value = '是'; target.value = '否'; }
+            else if (subtype.key === 'LumB_HER2pos' || subtype.key === 'HER2pos') { chemo.value = '是'; endo.value = (subtype.key==='LumB_HER2pos'?'是':'否'); target.value = '是'; }
+            else if (subtype.key === 'TNBC') { chemo.value = '是'; endo.value = '否'; target.value = '否'; }
+            if (stageIsIV) { chemo.value = '是'; target.value = (subtype.key.includes('HER2')?'是':'否'); }
+            updateTreatmentDisabled();
+        }
+
+        // ---------- 表单填充 ----------
+        function setComboValue(selId, otherId, value) {
+            const sel = document.getElementById(selId);
+            const optExists = Array.from(sel.options).some(opt => opt.value === value);
+            if (optExists) { sel.value = value; document.getElementById(otherId).style.display = 'none'; }
+            else { sel.value = '其他'; document.getElementById(otherId).style.display = 'block'; document.getElementById(otherId).value = value || ''; }
+        }
+
+        function fillForm(record) {
+            patientName.value = record.patientName || '';
+            document.getElementById('gender').value = record.gender || '女';
+            age.value = record.age || '';
+            document.getElementById('diseaseDuration').value = record.diseaseDuration || '6-12个月';
+            diagnosisDate.value = record.diagnosisDate || today();
+            document.getElementById('laterality').value = record.laterality || '双侧';
+            document.getElementById('menopauseStatus').value = record.menopauseStatus || '绝经后';
+            document.getElementById('familyHistory').value = record.familyHistory || '无';
+            setComboValue('pathologyType','pathologyOther', record.pathologyType);
+            document.getElementById('grade').value = record.grade || 'G2';
+            document.getElementById('erStatus').value = record.erStatus || '阳性';
+            document.getElementById('prStatus').value = record.prStatus || '阳性';
+            document.getElementById('her2Status').value = record.her2Status || '阴性';
+            document.getElementById('ki67').value = record.ki67 || '14-30%';
+            document.getElementById('tStage').value = record.tStage || 'T1c';
+            document.getElementById('nStage').value = record.nStage || 'N0';
+            document.getElementById('mStage').value = record.mStage || 'M0';
+            luminalType.value = record.luminalType || '';
+            ajccStage.value = record.ajccStage || '';
+            setComboValue('surgeryType','surgeryOther', record.surgeryType);
+            document.getElementById('radiotherapy').value = record.radiotherapy || '否';
+            document.getElementById('chemotherapy').value = record.chemotherapy || '否';
+            setComboValue('chemoRegimen','chemoOther', record.chemoRegimen);
+            document.getElementById('endocrineTherapy').value = record.endocrineTherapy || '否';
+            setComboValue('endocrineDrug','endocrineOther', record.endocrineDrug);
+            document.getElementById('targetedTherapy').value = record.targetedTherapy || '否';
+            setComboValue('targetedDrug','targetedOther', record.targetedDrug);
+            followupDate.value = record.followupDate || today();
+            document.getElementById('ecog').value = record.ecog || '1';
+            recurrenceSign.value = record.recurrenceSign || '无';
+            metastasisSite.value = record.metastasisSite || '无';
+            document.getElementById('notes').value = record.notes || '';
+            handleRecurrence();
+            updateTreatmentDisabled();
+            computeStage();
+            editingRecordName.textContent = record.patientName || '未填写';
+            editIndicator.classList.remove('hidden');
+            document.getElementById('saveRecordBtn').innerHTML = '<i class="fas fa-edit"></i> 更新记录';
+        }
+
+        function resetFormInternal(clearEditId = true) {
+            patientName.value = ''; age.value = ''; diagnosisDate.value = today(); followupDate.value = today();
+            document.getElementById('laterality').value='双侧'; document.getElementById('menopauseStatus').value='绝经后';
+            document.getElementById('familyHistory').value='无'; document.getElementById('pathologyType').value='浸润性导管癌';
+            document.getElementById('pathologyOther').style.display='none';
+            document.getElementById('grade').value='G2';
+            document.getElementById('erStatus').value='阳性'; document.getElementById('prStatus').value='阳性';
+            document.getElementById('her2Status').value='阳性'; document.getElementById('ki67').value='14-30%';
+            document.getElementById('tStage').value='T1c'; document.getElementById('nStage').value='N0'; document.getElementById('mStage').value='M0';
+            luminalType.value=''; ajccStage.value=''; anatStageText.textContent='-'; prognStageText.textContent='-';
+            document.getElementById('surgeryType').value='保乳手术'; document.getElementById('surgeryOther').style.display='none';
+            document.getElementById('radiotherapy').value='否';
+            document.getElementById('chemotherapy').value='是'; document.getElementById('chemoRegimen').value='AC-T'; document.getElementById('chemoOther').style.display='none';
+            document.getElementById('endocrineTherapy').value='是'; document.getElementById('endocrineDrug').value='他莫昔芬'; document.getElementById('endocrineOther').style.display='none';
+            document.getElementById('targetedTherapy').value='否'; document.getElementById('targetedDrug').value='无'; document.getElementById('targetedOther').style.display='none';
+            document.getElementById('ecog').value='1'; recurrenceSign.value='无'; metastasisSite.value='无'; metastasisSite.disabled=true;
+            document.getElementById('notes').value='';
+            updateTreatmentDisabled();
+            if (clearEditId) {
+                editingId = null;
+                editIndicator.classList.add('hidden');
+                document.getElementById('saveRecordBtn').innerHTML = '<i class="fas fa-save"></i> 保存记录';
+            }
+        }
+
+        function getComboValue(selId, otherId) {
+            const sel = document.getElementById(selId);
+            if (sel.value === '其他') return document.getElementById(otherId).value.trim() || '其他';
+            return sel.value;
+        }
+
+        function collectRecord() {
+            return {
+                id: editingId || (Date.now().toString(36)+Math.random().toString(36)),
+                patientName: patientName.value.trim() || '未填写',
+                gender: document.getElementById('gender').value,
+                age: age.value,
+                diseaseDuration: document.getElementById('diseaseDuration').value,
+                diagnosisDate: diagnosisDate.value,
+                laterality: document.getElementById('laterality').value,
+                menopauseStatus: document.getElementById('menopauseStatus').value,
+                familyHistory: document.getElementById('familyHistory').value,
+                pathologyType: getComboValue('pathologyType','pathologyOther'),
+                grade: document.getElementById('grade').value,
+                erStatus: document.getElementById('erStatus').value,
+                prStatus: document.getElementById('prStatus').value,
+                her2Status: document.getElementById('her2Status').value,
+                ki67: document.getElementById('ki67').value,
+                tStage: document.getElementById('tStage').value,
+                nStage: document.getElementById('nStage').value,
+                mStage: document.getElementById('mStage').value,
+                luminalType: luminalType.value,
+                ajccStage: ajccStage.value,
+                surgeryType: getComboValue('surgeryType','surgeryOther'),
+                radiotherapy: document.getElementById('radiotherapy').value,
+                chemotherapy: document.getElementById('chemotherapy').value,
+                chemoRegimen: document.getElementById('chemotherapy').value==='是' ? getComboValue('chemoRegimen','chemoOther') : '',
+                endocrineTherapy: document.getElementById('endocrineTherapy').value,
+                endocrineDrug: document.getElementById('endocrineTherapy').value==='是' ? getComboValue('endocrineDrug','endocrineOther') : '',
+                targetedTherapy: document.getElementById('targetedTherapy').value,
+                targetedDrug: document.getElementById('targetedTherapy').value==='是' ? getComboValue('targetedDrug','targetedOther') : '',
+                followupDate: followupDate.value,
+                ecog: document.getElementById('ecog').value,
+                recurrenceSign: recurrenceSign.value,
+                metastasisSite: metastasisSite.value,
+                notes: document.getElementById('notes').value
+            };
+        }
+
+        function saveRecord() {
+            if (!patientName.value.trim()) { alert('请填写姓名'); return; }
+            computeStage();
+            const record = collectRecord();
+            if (editingId) {
+                const idx = records.findIndex(r => r.id === editingId);
+                if (idx !== -1) records[idx] = record;
+            } else {
+                records.push(record);
+            }
+            saveRecords();
+            renderRecordTable();
+            resetFormInternal(true);
+        }
+
+        window.editRecord = function(id) {
+            const record = records.find(r => r.id === id);
+            if (!record) return;
+            editingId = id;
+            fillForm(record);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.deleteRecord = function(id) {
+            if (!confirm('确定要删除这条随访记录吗？')) return;
+            records = records.filter(r => r.id !== id);
+            if (editingId === id) resetFormInternal(true);
+            saveRecords();
+            renderRecordTable();
+        };
+
+        cancelEditBtn.addEventListener('click', () => resetFormInternal(true));
+
+        function renderRecordTable() {
+            if (!records.length) { tableBody.innerHTML = '<tr><td colspan="16" style="text-align:center;padding:20px;">暂无记录</td></tr>'; return; }
+            const sorted = [...records].sort((a,b)=> (a.followupDate < b.followupDate ? 1 : -1));
+            let html = '';
+            sorted.forEach(r => {
+                html += `<tr>
+                    <td>${r.patientName||''}</td><td>${r.gender||''}</td><td>${r.age||''}</td><td>${r.laterality||''}</td>
+                    <td>${r.pathologyType||''}</td><td>${r.erStatus||''}/${r.prStatus||''}/${r.her2Status||''}</td>
+                    <td>${r.tStage||''}${r.nStage||''}${r.mStage||''}</td><td>${r.luminalType||''} ${r.ajccStage||''}</td>
+                    <td>${r.surgeryType||''}</td><td>${r.chemoRegimen||''}</td><td>${r.endocrineDrug||''}</td><td>${r.targetedDrug||''}</td>
+                    <td>${r.followupDate||''}</td><td>${r.ecog||''}</td><td>${r.recurrenceSign||''}</td>
+                    <td>
+                        <button class="btn-icon edit-btn" onclick="editRecord('${r.id}')"><i class="fas fa-edit" title="修改"></i></button>
+                        <button class="btn-icon delete-btn" onclick="deleteRecord('${r.id}')"><i class="fas fa-trash-alt" title="删除"></i></button>
+                    </td>
+                </tr>`;
+            });
+            tableBody.innerHTML = html;
+        }
+
+        const cnHeaders = {
+            id:'ID', patientName:'姓名', gender:'性别', age:'年龄', diseaseDuration:'发病时长',
+            diagnosisDate:'确诊日期', laterality:'发病部位', menopauseStatus:'月经状态', familyHistory:'家族史',
+            pathologyType:'病理类型', grade:'组织学分级', erStatus:'ER状态', prStatus:'PR状态', her2Status:'HER2状态',
+            ki67:'Ki-67', tStage:'T分期', nStage:'N分期', mStage:'M分期', luminalType:'Luminal分型',
+            ajccStage:'AJCC预后分期', surgeryType:'手术方式', radiotherapy:'放疗', chemotherapy:'化疗',
+            chemoRegimen:'化疗方案', endocrineTherapy:'内分泌治疗', endocrineDrug:'内分泌药物',
+            targetedTherapy:'靶向治疗', targetedDrug:'靶向药物', followupDate:'随访日期', ecog:'ECOG评分',
+            recurrenceSign:'复发/转移', metastasisSite:'转移部位', notes:'备注'
+        };
+
+        function exportJSON() {
+            const blob = new Blob([JSON.stringify(records, null, 2)], {type:'application/json'});
+            downloadBlob(blob, `breast_followup_${today()}.json`);
+        }
+        function exportExcel() {
+            if (typeof XLSX === 'undefined') { alert('Excel库加载失败，请刷新'); return; }
+            const mapped = records.map(r => {
+                const obj = {};
+                Object.keys(cnHeaders).forEach(key => { obj[cnHeaders[key]] = r[key] !== undefined ? r[key] : ''; });
+                return obj;
+            });
+            const ws = XLSX.utils.json_to_sheet(mapped);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "随访记录");
+            XLSX.writeFile(wb, `breast_followup_${today()}.xlsx`);
+        }
+        function exportUsers() {
+            const blob = new Blob([JSON.stringify(users, null, 2)], {type:'application/json'});
+            downloadBlob(blob, `breast_users_${today()}.json`);
+        }
+        function importJSON(file) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (Array.isArray(data)) { records = data; saveRecords(); renderRecordTable(); }
+                    else alert('格式错误');
+                } catch(ex) { alert('无效JSON'); }
+            };
+            reader.readAsText(file);
+        }
+        function downloadBlob(blob, filename) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        function renderUserTable() {
+            let html = '';
+            users.forEach(u => {
+                html += `<tr><td>${u.username}</td><td>${u.role}</td>
+                    <td>${u.role!=='admin' ? `<button class="btn btn-outline btn-sm" onclick="deleteUser('${u.username}')"><i class="fas fa-trash-alt"></i> 删除</button>` : '管理员'}</td></tr>`;
+            });
+            userTableBody.innerHTML = html;
+        }
+        window.deleteUser = function(uname) {
+            if (!confirm(`确定要删除用户 "${uname}" 吗？`)) return;
+            if (uname === currentUser.username) { alert('不能删除自己'); return; }
+            users = users.filter(u => u.username !== uname);
+            saveUsers();
+            renderUserTable();
+        };
+
+        function showAuth(showLogin=true) {
+            authPage.classList.remove('hidden'); mainPage.classList.add('hidden');
+            loginCard.classList.toggle('hidden', !showLogin);
+            registerCard.classList.toggle('hidden', showLogin);
+        }
+        function showMain() {
+            authPage.classList.add('hidden'); mainPage.classList.remove('hidden');
+            displayUsername.textContent = currentUser.username;
+            displayRole.textContent = currentUser.role==='admin'?'管理员':'用户';
+            adminTabBtn.style.display = currentUser.role==='admin'?'block':'none';
+            document.querySelector('.tab[data-tab="followupTab"]').classList.add('active');
+            document.getElementById('followupTab').classList.add('active');
+            document.querySelector('.tab[data-tab="adminTab"]')?.classList.remove('active');
+            document.getElementById('adminTab')?.classList.remove('active');
+            renderRecordTable();
+            if (currentUser.role==='admin') renderUserTable();
+            resetFormInternal(true);
+        }
+
+        loginBtn.addEventListener('click', ()=>{
+            const name = loginUsername.value.trim();
+            const pass = loginPassword.value;
+            const user = users.find(u=>u.username===name && u.password===pass);
+            if (!user) { alert('用户名或密码错误'); return; }
+            currentUser = user;
+            showMain();
+        });
+        registerBtn.addEventListener('click', ()=>{
+            const name = regUsername.value.trim();
+            const pass = regPassword.value;
+            if (!name || !pass) { alert('用户名密码不能为空'); return; }
+            if (users.find(u=>u.username===name)) { alert('用户名已存在'); return; }
+            users.push({username:name, password:pass, role:'user'});
+            saveUsers();
+            alert('注册成功，请登录');
+            regUsername.value=''; regPassword.value='';
+            showAuth(true);
+        });
+        toRegisterLink.addEventListener('click', ()=> showAuth(false));
+        toLoginLink.addEventListener('click', ()=> showAuth(true));
+        logoutBtn.addEventListener('click', ()=>{ currentUser=null; showAuth(true); });
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', ()=>{
+                const target = tab.dataset.tab;
+                tabs.forEach(t=>t.classList.remove('active'));
+                tabContents.forEach(c=>c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(target).classList.add('active');
+                if (target==='adminTab') renderUserTable();
+            });
+        });
+
+        document.getElementById('calcStageBtn').addEventListener('click', ()=>{
+            computeStage();
+            suggestTreatmentsOnCalc();
+        });
+        document.getElementById('saveRecordBtn').addEventListener('click', saveRecord);
+        document.getElementById('resetFormBtn').addEventListener('click', ()=> resetFormInternal(true));
+        document.getElementById('exportJsonBtn').addEventListener('click', exportJSON);
+        document.getElementById('exportExcelBtn').addEventListener('click', exportExcel);
+        document.getElementById('exportUsersBtn').addEventListener('click', exportUsers);
+        document.getElementById('importBtn').addEventListener('click', ()=> document.getElementById('importFileInput').click());
+        document.getElementById('importFileInput').addEventListener('change', (e)=>{
+            if (e.target.files[0]) { importJSON(e.target.files[0]); e.target.value=''; }
+        });
+
+        updateTreatmentDisabled();
+        loadData();
+        showAuth(true);
+        document.getElementById('age').value = '';
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "breast-followup-system",
+  "version": "1.0.0",
+  "description": "Standalone breast cancer follow-up system web app | 乳腺癌随访系统网页工具",
+  "author": {
+    "name": "shbsrh"
+  },
+  "homepage": "https://github.com/liqi3333/breast-followup/releases/latest",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/liqi3333/breast-followup.git"
+  },
+  "license": "UNLICENSED",
+  "scripts": {
+    "build:html": "node scripts/build-html-release.js"
+  }
+}
