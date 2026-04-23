@@ -1,6 +1,6 @@
 <div align="center">
   <h1>Breast Follow-up System</h1>
-  <p><strong>Standalone breast cancer follow-up record system + staging helper (single-file HTML).</strong></p>
+  <p><strong>Standalone breast cancer follow-up record system + staging helper, with separate PC and mobile web versions.</strong></p>
   <p><a href="README.zh-CN.md">简体中文</a> | <strong>English</strong></p>
 
   <p>
@@ -12,6 +12,7 @@
 
   <p>
     <a href="https://liqi3333.github.io/breast-followup/"><img alt="Open Online" src="https://img.shields.io/badge/Open-Online%20Page-0ea5e9?style=for-the-badge" /></a>
+    <a href="https://liqi3333.github.io/breast-followup/mobile.html"><img alt="Open Mobile Web" src="https://img.shields.io/badge/Open-Mobile%20Web-f59e0b?style=for-the-badge" /></a>
     <a href="https://github.com/liqi3333/breast-followup/releases/latest"><img alt="Download HTML" src="https://img.shields.io/badge/Download-Latest%20HTML-10b981?style=for-the-badge" /></a>
   </p>
 </div>
@@ -23,11 +24,13 @@ This repository productizes a single-file HTML breast cancer follow-up system in
 - GitHub Pages online usage
 - Standalone HTML download via Releases
 - Automated build + release workflows
+- Separate PC and mobile entry pages
 
 ## Access
 
 - GitHub repository: <https://github.com/liqi3333/breast-followup>
-- Online page: <https://liqi3333.github.io/breast-followup/>
+- Online PC page: <https://liqi3333.github.io/breast-followup/>
+- Online mobile page: <https://liqi3333.github.io/breast-followup/mobile.html>
 - Latest release: <https://github.com/liqi3333/breast-followup/releases/latest>
 
 ## Login / Data storage
@@ -59,13 +62,14 @@ npm run build:html
 Output:
 
 ```text
-dist-html/Breast-Followup-System-1.0.0.html
+dist-html/Breast-Followup-System-1.0.1.html
+dist-html/Breast-Followup-System-mobile-1.0.1.html
 ```
 
 ## Release automation
 
-- Push to `main`: build HTML and upload workflow artifact
-- Push tag `v*`: build and publish the standalone HTML asset to GitHub Releases
+- Push to `main`: build PC + mobile HTML and upload workflow artifacts
+- Push tag `v*`: build and publish both standalone HTML assets to GitHub Releases
 
 ## Notes / Disclaimer
 

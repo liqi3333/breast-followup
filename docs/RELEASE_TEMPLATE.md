@@ -1,13 +1,15 @@
 # Breast Follow-up System Release Notes | 更新日志
 
-This release provides a standalone HTML file for the Breast Follow-up System.
+This release provides both a standalone desktop HTML file and a separate mobile-optimized HTML file for the Breast Follow-up System.
 
-本版本提供乳腺癌随访系统的独立 HTML 文件。
+本版本提供乳腺癌随访系统的 PC 独立 HTML 文件，以及单独优化的手机版 HTML 文件。
 
 ## Assets | 产物
 
-- Standalone HTML file (`dist-html/*.html`)
-- 独立 HTML 文件（`dist-html/*.html`）
+- Standalone desktop HTML file (`dist-html/*.html`)
+- Separate mobile HTML file (`dist-html/*.html`)
+- PC 独立 HTML 文件（`dist-html/*.html`）
+- 手机版独立 HTML 文件（`dist-html/*.html`）
 
 ## Notes | 注意事项
 

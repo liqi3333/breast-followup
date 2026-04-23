@@ -1,7 +1,7 @@
 {
   "name": "breast-followup-system",
-  "version": "1.0.0",
-  "description": "Standalone breast cancer follow-up system web app | 乳腺癌随访系统网页工具",
+  "version": "1.0.1",
+  "description": "Desktop and mobile breast cancer follow-up system web app | 乳腺癌随访系统桌面与手机版网页工具",
   "author": {
     "name": "shbsrh"
   },

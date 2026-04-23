@@ -1,6 +1,6 @@
 <div align="center">
   <h1>Breast Follow-up System</h1>
-  <p><strong>乳腺癌随访系统（单文件 HTML），支持随访记录管理 + 分期辅助。</strong></p>
+  <p><strong>乳腺癌随访系统，支持随访记录管理 + 分期辅助，并提供独立 PC / 手机版网页。</strong></p>
   <p><strong>简体中文</strong> | <a href="README.md">English</a></p>
 
   <p>
@@ -12,6 +12,7 @@
 
   <p>
     <a href="https://liqi3333.github.io/breast-followup/"><img alt="在线打开" src="https://img.shields.io/badge/在线打开-网页-0ea5e9?style=for-the-badge" /></a>
+    <a href="https://liqi3333.github.io/breast-followup/mobile.html"><img alt="打开手机版网页" src="https://img.shields.io/badge/打开-手机版网页-f59e0b?style=for-the-badge" /></a>
     <a href="https://github.com/liqi3333/breast-followup/releases/latest"><img alt="下载 HTML" src="https://img.shields.io/badge/下载-最新%20HTML-10b981?style=for-the-badge" /></a>
   </p>
 </div>
@@ -23,11 +24,13 @@
 - GitHub Pages 在线使用
 - Releases 提供独立 HTML 下载
 - 自动构建与自动发布工作流
+- 提供独立 PC 页面和手机版页面
 
 ## 入口
 
 - GitHub 仓库：<https://github.com/liqi3333/breast-followup>
-- 在线页面：<https://liqi3333.github.io/breast-followup/>
+- 在线 PC 页面：<https://liqi3333.github.io/breast-followup/>
+- 在线手机版页面：<https://liqi3333.github.io/breast-followup/mobile.html>
 - 最新 Release：<https://github.com/liqi3333/breast-followup/releases/latest>
 
 ## 登录 / 数据存储说明
@@ -59,13 +62,14 @@ npm run build:html
 产物：
 
 ```text
-dist-html/Breast-Followup-System-1.0.0.html
+dist-html/Breast-Followup-System-1.0.1.html
+dist-html/Breast-Followup-System-mobile-1.0.1.html
 ```
 
 ## 自动发布流程
 
-- 推送到 `main`：自动构建 HTML，并上传 workflow artifact
-- 推送 `v*` 标签：自动生成独立 HTML 并发布到 GitHub Releases
+- 推送到 `main`：自动构建 PC + 手机版 HTML，并上传 workflow artifact
+- 推送 `v*` 标签：自动生成 PC / 手机版独立 HTML 并发布到 GitHub Releases
 
 ## 说明 / 免责声明
 
