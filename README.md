@@ -1,6 +1,6 @@
 <div align="center">
   <h1>Breast Follow-up System</h1>
-  <p><strong>Standalone breast cancer follow-up record system + staging helper, with separate PC and mobile web versions.</strong></p>
+  <p><strong>Web + Windows desktop breast cancer follow-up system with local databases, staging helper, and separate PC/mobile web versions.</strong></p>
   <p><a href="README.zh-CN.md">简体中文</a> | <strong>English</strong></p>
 
   <p>
@@ -22,22 +22,25 @@
 This repository productizes a single-file HTML breast cancer follow-up system into a deliverable GitHub project:
 
 - GitHub Pages online usage
-- Standalone HTML download via Releases
+- Windows EXE and standalone HTML download via Releases
 - Automated build + release workflows
 - Separate PC and mobile entry pages
+- Windows desktop local databases with backup and restore
 
 ## Access
 
 - GitHub repository: <https://github.com/liqi3333/breast-followup>
 - Online PC page: <https://liqi3333.github.io/breast-followup/>
 - Online mobile page: <https://liqi3333.github.io/breast-followup/mobile.html>
+- Windows desktop download: <https://github.com/liqi3333/breast-followup/releases/latest>
 - Latest release: <https://github.com/liqi3333/breast-followup/releases/latest>
 
 ## Login / Data storage
 
-- This is a **local-first** web app. Users and records are stored in the browser via `localStorage`.
-- Built-in admin account in the HTML demo:
-  - `admin / admin123`
+- The online version remains a **local-first** web app. Users and records are stored in the browser via `localStorage`.
+- The Windows desktop build creates two local SQLite databases: one for user accounts and one for follow-up records.
+- The desktop app supports one-click backup and restore of those databases.
+- Default admin account: `admin / admin123`
 
 ## Quick Start
 
@@ -56,23 +59,28 @@ Then open the HTML file directly in a browser.
 ### Build locally
 
 ```bash
+npm install
 npm run build:html
+npm run build:win
 ```
 
 Output:
 
 ```text
-dist-html/Breast-Followup-System-1.0.1.html
-dist-html/Breast-Followup-System-mobile-1.0.1.html
+dist/Breast-Followup-System-1.1.0.exe
+dist-html/Breast-Followup-System-1.1.0.html
+dist-html/Breast-Followup-System-mobile-1.1.0.html
 ```
 
 ## Release automation
 
-- Push to `main`: build PC + mobile HTML and upload workflow artifacts
-- Push tag `v*`: build and publish both standalone HTML assets to GitHub Releases
+- Push to `main`: build Windows EXE + PC/mobile HTML and upload workflow artifacts
+- Push tag `v*`: build and publish the Windows EXE plus standalone HTML assets to GitHub Releases
 
 ## Notes / Disclaimer
 
 - This project is for informational and workflow reference only.
 - Do **not** use it as a substitute for formal clinical decision-making.
 - Do **not** store real sensitive patient data in a browser demo app.
+- The desktop backup action exports `users.db`, `followups.db`, and `manifest.json`.
+- The desktop restore action overwrites the current local desktop data, so back up first.

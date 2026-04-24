@@ -215,6 +215,8 @@
                     <button class="btn btn-outline btn-sm" id="exportJsonBtn"><i class="fas fa-file-code"></i> 导出 JSON</button>
                     <button class="btn btn-outline btn-sm" id="exportExcelBtn"><i class="fas fa-file-excel"></i> 导出 Excel</button>
                     <button class="btn btn-outline btn-sm" id="exportUsersBtn"><i class="fas fa-users"></i> 导出用户数据</button>
+                    <button class="btn btn-outline btn-sm hidden" id="backupDbBtn"><i class="fas fa-database"></i> 备份数据库</button>
+                    <button class="btn btn-outline btn-sm hidden" id="restoreDbBtn"><i class="fas fa-rotate-left"></i> 恢复数据库</button>
                     <input type="file" id="importFileInput" accept=".json" style="display:none;">
                     <button class="btn btn-outline btn-sm" id="importBtn"><i class="fas fa-upload"></i> 导入 JSON</button>
                 </div>
@@ -241,6 +243,7 @@
     (function() {
         const USERS_KEY = 'breast_users_db';
         const RECORDS_KEY = 'breast_followup_records';
+        const isDesktopApp = !!window.electronDB;
 
         let currentUser = null;
         let users = [];
@@ -285,7 +288,12 @@
         const stageNote = document.getElementById('stageNote');
 
         // ---------- 工具函数 ----------
-        function loadData() {
+        async function loadData() {
+            if (isDesktopApp) {
+                users = await window.electronDB.listUsers();
+                records = await window.electronDB.listRecords();
+                return;
+            }
             users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
             if (!users.length) {
                 users = [{ username: 'admin', password: 'admin123', role: 'admin' }];
@@ -293,8 +301,22 @@
             }
             records = JSON.parse(localStorage.getItem(RECORDS_KEY) || '[]');
         }
-        function saveUsers() { localStorage.setItem(USERS_KEY, JSON.stringify(users)); }
-        function saveRecords() { localStorage.setItem(RECORDS_KEY, JSON.stringify(records)); }
+        async function refreshDesktopDataAfterRestore() {
+            await loadData();
+            if (!currentUser) return { reauthRequired: false };
+            const matchedUser = users.find(u => u.username === currentUser.username);
+            if (!matchedUser) {
+                currentUser = null;
+                showAuth(true);
+                return { reauthRequired: true };
+            }
+            currentUser = { ...currentUser, role: matchedUser.role };
+            showMain();
+            if (document.getElementById('adminTab').classList.contains('active')) renderUserTable();
+            return { reauthRequired: false };
+        }
+        function saveUsers() { if (!isDesktopApp) localStorage.setItem(USERS_KEY, JSON.stringify(users)); }
+        function saveRecords() { if (!isDesktopApp) localStorage.setItem(RECORDS_KEY, JSON.stringify(records)); }
         function today() { return new Date().toISOString().slice(0, 10); }
 
         window.toggleOther = function(sel, inputId) {
@@ -531,7 +553,7 @@
             };
         }
 
-        function saveRecord() {
+        async function saveRecord() {
             if (!patientName.value.trim()) { alert('请填写姓名'); return; }
             computeStage();
             const record = collectRecord();
@@ -541,7 +563,8 @@
             } else {
                 records.push(record);
             }
-            saveRecords();
+            if (isDesktopApp) await window.electronDB.saveRecord(record);
+            else saveRecords();
             renderRecordTable();
             resetFormInternal(true);
         }
@@ -554,11 +577,12 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        window.deleteRecord = function(id) {
+        window.deleteRecord = async function(id) {
             if (!confirm('确定要删除这条随访记录吗？')) return;
             records = records.filter(r => r.id !== id);
             if (editingId === id) resetFormInternal(true);
-            saveRecords();
+            if (isDesktopApp) await window.electronDB.deleteRecord({ id });
+            else saveRecords();
             renderRecordTable();
         };
 
@@ -615,12 +639,44 @@
             const blob = new Blob([JSON.stringify(users, null, 2)], {type:'application/json'});
             downloadBlob(blob, `breast_users_${today()}.json`);
         }
+        async function backupDesktopDatabases() {
+            if (!isDesktopApp) { alert('仅桌面版支持数据库备份'); return; }
+            try {
+                const result = await window.electronDB.exportBackup();
+                if (result && result.canceled) return;
+                const folderName = result && result.backupDir ? result.backupDir.split(/[/\\]/).pop() : 'backup';
+                alert(`数据库已备份到：${folderName}`);
+            } catch (error) {
+                alert(error.message || '数据库备份失败');
+            }
+        }
+        async function restoreDesktopDatabases() {
+            if (!isDesktopApp) { alert('仅桌面版支持数据库恢复'); return; }
+            if (!confirm('恢复数据库会覆盖当前桌面版的用户和随访数据，继续吗？')) return;
+            try {
+                const result = await window.electronDB.restoreBackup();
+                if (result && result.canceled) return;
+                const refreshResult = await refreshDesktopDataAfterRestore();
+                if (refreshResult && refreshResult.reauthRequired) {
+                    alert('数据库已恢复，请重新登录');
+                    return;
+                }
+                alert(`数据库已恢复：${result.recordCount || 0} 条记录`);
+            } catch (error) {
+                alert(error.message || '数据库恢复失败');
+            }
+        }
         function importJSON(file) {
             const reader = new FileReader();
-            reader.onload = e => {
+            reader.onload = async e => {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if (Array.isArray(data)) { records = data; saveRecords(); renderRecordTable(); }
+                    if (Array.isArray(data)) {
+                        records = data;
+                        if (isDesktopApp) await window.electronDB.replaceRecords({ records: data });
+                        else saveRecords();
+                        renderRecordTable();
+                    }
                     else alert('格式错误');
                 } catch(ex) { alert('无效JSON'); }
             };
@@ -642,11 +698,21 @@
             });
             userTableBody.innerHTML = html;
         }
-        window.deleteUser = function(uname) {
+        window.deleteUser = async function(uname) {
             if (!confirm(`确定要删除用户 "${uname}" 吗？`)) return;
             if (uname === currentUser.username) { alert('不能删除自己'); return; }
-            users = users.filter(u => u.username !== uname);
-            saveUsers();
+            if (isDesktopApp) {
+                try {
+                    await window.electronDB.deleteUser({ username: uname });
+                    users = await window.electronDB.listUsers();
+                } catch (error) {
+                    alert(error.message || '删除失败');
+                    return;
+                }
+            } else {
+                users = users.filter(u => u.username !== uname);
+                saveUsers();
+            }
             renderUserTable();
         };
 
@@ -660,6 +726,8 @@
             displayUsername.textContent = currentUser.username;
             displayRole.textContent = currentUser.role==='admin'?'管理员':'用户';
             adminTabBtn.style.display = currentUser.role==='admin'?'block':'none';
+            document.getElementById('backupDbBtn').classList.toggle('hidden', !isDesktopApp);
+            document.getElementById('restoreDbBtn').classList.toggle('hidden', !isDesktopApp);
             document.querySelector('.tab[data-tab="followupTab"]').classList.add('active');
             document.getElementById('followupTab').classList.add('active');
             document.querySelector('.tab[data-tab="adminTab"]')?.classList.remove('active');
@@ -669,21 +737,31 @@
             resetFormInternal(true);
         }
 
-        loginBtn.addEventListener('click', ()=>{
+        loginBtn.addEventListener('click', async ()=>{
             const name = loginUsername.value.trim();
             const pass = loginPassword.value;
-            const user = users.find(u=>u.username===name && u.password===pass);
+            const user = isDesktopApp ? await window.electronDB.login({ username: name, password: pass }) : users.find(u=>u.username===name && u.password===pass);
             if (!user) { alert('用户名或密码错误'); return; }
             currentUser = user;
             showMain();
         });
-        registerBtn.addEventListener('click', ()=>{
+        registerBtn.addEventListener('click', async ()=>{
             const name = regUsername.value.trim();
             const pass = regPassword.value;
             if (!name || !pass) { alert('用户名密码不能为空'); return; }
-            if (users.find(u=>u.username===name)) { alert('用户名已存在'); return; }
-            users.push({username:name, password:pass, role:'user'});
-            saveUsers();
+            if (isDesktopApp) {
+                try {
+                    await window.electronDB.register({ username: name, password: pass });
+                    users = await window.electronDB.listUsers();
+                } catch (error) {
+                    alert(error.message || '注册失败');
+                    return;
+                }
+            } else {
+                if (users.find(u=>u.username===name)) { alert('用户名已存在'); return; }
+                users.push({username:name, password:pass, role:'user'});
+                saveUsers();
+            }
             alert('注册成功，请登录');
             regUsername.value=''; regPassword.value='';
             showAuth(true);
@@ -712,14 +790,18 @@
         document.getElementById('exportJsonBtn').addEventListener('click', exportJSON);
         document.getElementById('exportExcelBtn').addEventListener('click', exportExcel);
         document.getElementById('exportUsersBtn').addEventListener('click', exportUsers);
+        document.getElementById('backupDbBtn').addEventListener('click', backupDesktopDatabases);
+        document.getElementById('restoreDbBtn').addEventListener('click', restoreDesktopDatabases);
         document.getElementById('importBtn').addEventListener('click', ()=> document.getElementById('importFileInput').click());
         document.getElementById('importFileInput').addEventListener('change', (e)=>{
             if (e.target.files[0]) { importJSON(e.target.files[0]); e.target.value=''; }
         });
 
         updateTreatmentDisabled();
-        loadData();
-        showAuth(true);
+        (async function initializeApp() {
+            await loadData();
+            showAuth(true);
+        })();
         document.getElementById('age').value = '';
     })();
 </script>

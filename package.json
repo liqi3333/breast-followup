@@ -1,7 +1,7 @@
 {
   "name": "breast-followup-system",
-  "version": "1.0.1",
-  "description": "Desktop and mobile breast cancer follow-up system web app | 乳腺癌随访系统桌面与手机版网页工具",
+  "version": "1.1.0",
+  "description": "Web and Windows desktop breast cancer follow-up system with local databases | 带 Windows 桌面版与本地数据库的乳腺癌随访系统",
   "author": {
     "name": "shbsrh"
   },
@@ -12,6 +12,44 @@
   },
   "license": "UNLICENSED",
   "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win portable",
     "build:html": "node scripts/build-html-release.js"
+  },
+  "main": "main.js",
+  "dependencies": {
+    "sql.js": "^1.13.0"
+  },
+  "devDependencies": {
+    "electron": "^35.1.5",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "ai.openclaw.breast-followup",
+    "productName": "Breast Follow-up System",
+    "copyright": "Copyright © 2026 shbsrh",
+    "artifactName": "Breast-Followup-System-${version}.${ext}",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "desktop-db.js",
+      "index.html",
+      "mobile.html",
+      "scripts/build-html-release.js",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    }
   }
 }
